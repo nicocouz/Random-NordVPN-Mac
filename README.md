@@ -29,7 +29,7 @@ Before using this script, ensure the following:
    Clone this repository or download the script file:
    ```bash
    git clone https://github.com/nicocouz/Random-NordVPN-Mac.git
-   cd nordvpn-country-switcher
+   cd Random-NordVPN-Mac
    ```
 
 2. **Edit the Country List (Optional)**:

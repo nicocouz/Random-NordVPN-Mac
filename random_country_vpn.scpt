@@ -1,53 +1,67 @@
 on run
 	-- Define the list of countries we are interested in
-	set countryList to {"France", "Switzerland", "Belgium", "Monaco", "Luxembourg"}
-	set availableServers to {} -- Initialize an empty list to hold servers from desired countries
-	
+	set countryList to {"Spain", "France"}
+
+	-- Pick a random country from the list
+	set randomIndex to (random number from 1 to (count of countryList))
+	set selectedCountry to item randomIndex of countryList
+
 	tell application "NordVPN" to activate
-	delay 0.5 -- Slightly increased delay for better UI responsiveness
-	
+	delay 0.5
+
 	tell application "System Events"
 		tell process "NordVPN"
 			set frontmost to true
-			delay 0.5 -- Allow UI elements to settle
-			
-			-- Get the number of rows in the table
-			set rowCount to count of rows of table 1 of scroll area 1 of splitter group 1 of window 1
-			
-			-- Iterate over each row to retrieve server names
+			delay 0.5
+
+			-- Reference to the sidebar panel containing the search and server list
+			set sidePanel to group 1 of group 2 of group 1 of window 1
+			set searchField to text field 1 of sidePanel
+
+			-- Clear the search field and type the country name
+			click searchField
+			delay 0.2
+
+			-- Select all existing text and replace with country name
+			keystroke "a" using command down
+			keystroke selectedCountry
+			delay 0.8 -- Wait for the search results to filter
+
+			-- Now the table should show only matching results
+			set theTable to table 1 of scroll area 1 of sidePanel
+			set rowCount to count of rows of theTable
+
+			-- Collect matching country rows from filtered results
+			set availableServers to {}
 			repeat with i from 1 to rowCount
 				try
-					-- Get the server name in the current row
-					set serverName to value of static text of UI element 1 of UI element 1 of row i of table 1 of scroll area 1 of splitter group 1 of window 1
-					
-					-- Check if the server name contains any of the countries in our list
-					repeat with country in countryList
-						if serverName contains country then
-							-- Add the server to the list of available servers
-							set end of availableServers to {serverName, i}
-						end if
-					end repeat
+					set serverName to value of static text 1 of button 1 of UI element 1 of row i of theTable
+					if serverName contains selectedCountry then
+						set end of availableServers to {serverName, i}
+					end if
 				on error
-					-- Continue if there is an error retrieving the server name
+					-- Skip non-country rows (headers, etc.)
 				end try
 			end repeat
-			
-			-- Check if we found any servers
+
 			if (count of availableServers) is greater than 0 then
-				-- Randomly select one server from the available list
+				-- Pick a random match (in case multiple cities for one country)
 				set randomServer to some item of availableServers
 				set selectedServerName to item 1 of randomServer
 				set selectedRow to item 2 of randomServer
-				
-				-- Click the button for the randomly selected server
-				click button 1 of UI element 1 of UI element 1 of row selectedRow of table 1 of scroll area 1 of splitter group 1 of window 1
-				
-				-- Log the selected server to stdout
+
+				click button 1 of UI element 1 of row selectedRow of theTable
 				log "Connected to: " & selectedServerName
 			else
-				-- Log if no servers found
-				log "No servers available for the specified countries."
+				log "No servers available for " & selectedCountry
 			end if
+
+			-- Clear the search field to restore full list
+			delay 0.3
+			click searchField
+			keystroke "a" using command down
+			key code 51 -- Delete key
+			delay 0.2
 		end tell
 	end tell
 end run
